@@ -1,6 +1,6 @@
 ﻿Imports System.IO
 
-Public Class Form1
+Public Class GroupPreferentialSorter
 
     Public Function PreferentialSort(people As List(Of Person), groups As Dictionary(Of String, List(Of Person)), maxSize As Integer) As Dictionary(Of String, List(Of Person))
         For Each person As Person In people
