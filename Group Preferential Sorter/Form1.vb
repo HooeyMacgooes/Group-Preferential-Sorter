@@ -1,103 +1,119 @@
 ﻿Imports System.IO
 
+' This class handles sorting people into groups based on their preferences, inclusion, and exclusion constraints.
 Public Class GroupPreferentialSorter
 
-    Public Function PreferentialSort(people As List(Of Person), groups As Dictionary(Of String, List(Of Person)), maxSize As Integer) As Dictionary(Of String, List(Of Person))
-        For Each person As Person In people
-            If Not String.IsNullOrEmpty(person.Inclusion) Then
-                Dim groupId As String = person.Inclusion
-                If groups.ContainsKey(groupId) AndAlso groups(groupId).Count < maxSize Then
-                    groups(groupId).Add(person)
-                    person.AssignedGroup = groupId
+    ' Assigns people to groups based on inclusion, exclusion, and preferences.
+    ' lstPeople: List of people to assign.
+    ' dictGroups: Dictionary of group IDs to lists of assigned people.
+    ' intMaxSize: Maximum allowed size for each group.
+    ' Returns: Updated dictionary with people assigned to groups.
+    Public Function PreferentialSort(lstPeople As List(Of Person), dictGroups As Dictionary(Of String, List(Of Person)), intMaxSize As Integer) As Dictionary(Of String, List(Of Person))
+        ' First, assign people to their inclusion group if specified and space is available.
+        For Each objPerson As Person In lstPeople
+            If Not String.IsNullOrEmpty(objPerson.strInclusion) Then
+                Dim strGroupId As String = objPerson.strInclusion
+                If dictGroups.ContainsKey(strGroupId) AndAlso dictGroups(strGroupId).Count < intMaxSize Then
+                    dictGroups(strGroupId).Add(objPerson)
+                    objPerson.strAssignedGroup = strGroupId
                 Else
-
+                    ' Could handle overflow or conflicts here if needed.
                 End If
             End If
         Next
 
-        For Each person As Person In people
-            If Not String.IsNullOrEmpty(person.Exclusion) Then
-                person.ExcludedGroups.Add(person.Exclusion)
+        ' Add exclusion group to each person's exclusion set if specified.
+        For Each objPerson As Person In lstPeople
+            If Not String.IsNullOrEmpty(objPerson.strExclusion) Then
+                objPerson.hshExcludedGroups.Add(objPerson.strExclusion)
             End If
         Next
 
-        For Each person As Person In people
-            If String.IsNullOrEmpty(person.AssignedGroup) Then
-                For Each Preference As String In person.Preferences
-                    If Not person.ExcludedGroups.Contains(Preference) AndAlso groups.ContainsKey(Preference) AndAlso groups(Preference).Count < maxSize Then
-                        groups(Preference).Add(person)
-                        person.AssignedGroup = Preference
+        ' Assign people to their preferred groups, skipping excluded groups and full groups.
+        For Each objPerson As Person In lstPeople
+            If String.IsNullOrEmpty(objPerson.strAssignedGroup) Then
+                For Each strPreference As String In objPerson.lstPreferences
+                    If Not objPerson.hshExcludedGroups.Contains(strPreference) AndAlso dictGroups.ContainsKey(strPreference) AndAlso dictGroups(strPreference).Count < intMaxSize Then
+                        dictGroups(strPreference).Add(objPerson)
+                        objPerson.strAssignedGroup = strPreference
                         Exit For
                     End If
                 Next
             End If
         Next
 
-        For Each person As Person In people
-            If String.IsNullOrEmpty(person.AssignedGroup) Then
-                For Each kvp As KeyValuePair(Of String, List(Of Person)) In groups
-                    Dim groupId As String = kvp.Key
-                    Dim memberList As List(Of Person) = kvp.Value
+        ' Assign any remaining unassigned people to any available group that is not excluded and not full.
+        For Each objPerson As Person In lstPeople
+            If String.IsNullOrEmpty(objPerson.strAssignedGroup) Then
+                For Each kvpGroup As KeyValuePair(Of String, List(Of Person)) In dictGroups
+                    Dim strGroupId As String = kvpGroup.Key
+                    Dim lstMemberList As List(Of Person) = kvpGroup.Value
 
-                    If memberList.Count < maxSize AndAlso Not person.ExcludedGroups.Contains(groupId) Then
-                        memberList.Add(person)
-                        person.AssignedGroup = groupId
+                    If lstMemberList.Count < intMaxSize AndAlso Not objPerson.hshExcludedGroups.Contains(strGroupId) Then
+                        lstMemberList.Add(objPerson)
+                        objPerson.strAssignedGroup = strGroupId
                         Exit For
                     End If
                 Next
             End If
         Next
 
-        Return groups
+        Return dictGroups
     End Function
 
-    Public Function LoadPeopleFromCsv(filePath As String) As List(Of Person)
-        Dim people As New List(Of Person)()
+    ' Loads people and their preferences from a CSV file.
+    ' strFilePath: Path to the CSV file.
+    ' Returns: List of Person objects populated from the file.
+    Public Function LoadPeopleFromCsv(strFilePath As String) As List(Of Person)
+        Dim lstPeople As New List(Of Person)()
 
-        For Each line As String In File.ReadLines(filePath)
-            If String.IsNullOrWhiteSpace(line) Then Continue For
-            Dim fields = line.Split(","c)
+        For Each strLine As String In File.ReadLines(strFilePath)
+            If String.IsNullOrWhiteSpace(strLine) Then Continue For
+            Dim arrFields = strLine.Split(","c)
 
-            If fields.Length < 6 Then Continue For
+            Dim objPerson As New Person()
+            objPerson.strName = arrFields(0).Trim()
 
-            Dim person As New Person()
-            person.Name = fields(0).Trim()
-
-            For i As Integer = 1 To 5
-                If fields.Length > i AndAlso Not String.IsNullOrWhiteSpace(fields(i)) Then
-                    person.Preferences.Add(fields(i).Trim())
+            ' Add up to 5 preferences from the CSV fields.
+            For intI As Integer = 1 To 5
+                If arrFields.Length > intI AndAlso Not String.IsNullOrWhiteSpace(arrFields(intI)) Then
+                    objPerson.lstPreferences.Add(arrFields(intI).Trim())
                 End If
             Next
 
-            If fields.Length > 6 AndAlso Not String.IsNullOrWhiteSpace(fields(6)) Then
-                person.Inclusion = fields(6).Trim()
+            ' Optional inclusion group.
+            If arrFields.Length > 6 AndAlso Not String.IsNullOrWhiteSpace(arrFields(6)) Then
+                objPerson.strInclusion = arrFields(6).Trim()
             End If
 
-            If fields.Length > 7 AndAlso Not String.IsNullOrWhiteSpace(fields(7)) Then
-                person.Exclusion = fields(7).Trim()
+            ' Optional exclusion group.
+            If arrFields.Length > 7 AndAlso Not String.IsNullOrWhiteSpace(arrFields(7)) Then
+                objPerson.strExclusion = arrFields(7).Trim()
             End If
 
-            people.Add(person)
+            lstPeople.Add(objPerson)
         Next
 
-        Return people
+        Return lstPeople
     End Function
 
 End Class
 
+' Represents a person with preferences, inclusion/exclusion constraints, and group assignment.
 Public Class Person
 
-    Public Name As String
-    Public Preferences As List(Of String)
-    Public Inclusion As String
-    Public Exclusion As String
-    Public AssignedGroup As String
-    Public ExcludedGroups As HashSet(Of String)
+    Public strName As String ' Person's name
+    Public lstPreferences As List(Of String) ' List of preferred group IDs
+    Public strInclusion As String ' Group ID the person must be included in (if any)
+    Public strExclusion As String ' Group ID the person must be excluded from (if any)
+    Public strAssignedGroup As String ' The group ID the person was assigned to
+    Public hshExcludedGroups As HashSet(Of String) ' Set of group IDs the person cannot be assigned to
 
+    ' Initializes a new person with empty preferences and exclusions.
     Public Sub New()
-        Preferences = New List(Of String)()
-        ExcludedGroups = New HashSet(Of String)()
-        AssignedGroup = Nothing
+        lstPreferences = New List(Of String)()
+        hshExcludedGroups = New HashSet(Of String)()
+        strAssignedGroup = Nothing
     End Sub
 End Class
 
