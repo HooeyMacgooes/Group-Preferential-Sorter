@@ -1,7 +1,34 @@
-﻿Imports System.IO
+﻿
+Imports System.IO
+Imports System.Windows.Forms
+
+Public Class Form1
+
+    Private lstPeople As List(Of Person)
+    Private sorter As New GroupPreferentialSorter()
+
+    ' Handles the Import button click event
+    Private Sub btnImport_Click(sender As Object, e As EventArgs) Handles btnImport.Click
+        Using dlgOpen As New OpenFileDialog()
+            dlgOpen.Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*"
+            dlgOpen.Title = "Select People CSV File"
+            If dlgOpen.ShowDialog() = DialogResult.OK Then
+                lstPeople = sorter.LoadPeopleFromCsv(dlgOpen.FileName)
+                MessageBox.Show("Loaded " & lstPeople.Count & " people from file.", "Import Successful", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                ' Now you can use lstPeople and update your UI as needed
+            End If
+        End Using
+    End Sub
+
+End Class
+
+
+
 
 ' This class handles sorting people into groups based on their preferences, inclusion, and exclusion constraints.
 Public Class GroupPreferentialSorter
+
+
 
     ' Assigns people to groups based on inclusion, exclusion, and preferences.
     ' lstPeople: List of people to assign.
@@ -96,7 +123,6 @@ Public Class GroupPreferentialSorter
 
         Return lstPeople
     End Function
-
 End Class
 
 ' Represents a person with preferences, inclusion/exclusion constraints, and group assignment.
@@ -116,6 +142,10 @@ Public Class Person
         strAssignedGroup = Nothing
     End Sub
 End Class
+
+
+
+
 
 
 

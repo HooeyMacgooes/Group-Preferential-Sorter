@@ -8,17 +8,17 @@ Imports System.Runtime.InteropServices
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("Group Preferential Sorter")>
+<Assembly: AssemblyTitle("Group PreferentialSorter")>
 <Assembly: AssemblyDescription("")>
 <Assembly: AssemblyCompany("")>
-<Assembly: AssemblyProduct("Group Preferential Sorter")>
+<Assembly: AssemblyProduct("Group PreferentialSorter")>
 <Assembly: AssemblyCopyright("Copyright ©  2025")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(False)>
 
 'The following GUID is for the ID of the typelib if this project is exposed to COM
-<Assembly: Guid("33fc571b-882f-4d0f-95ac-90afecceaa0a")>
+<Assembly: Guid("03c1a98a-f9e3-4a7d-a050-31940d6e9339")>
 
 ' Version information for an assembly consists of the following four values:
 '
