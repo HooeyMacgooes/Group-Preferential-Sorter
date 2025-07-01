@@ -32,6 +32,7 @@ Public Class Form1
             dlgOpen.Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*"
             dlgOpen.Title = "Select People CSV File"
             If dlgOpen.ShowDialog() = DialogResult.OK Then
+                ' Load people from CSV
                 lstPeople = sorter.LoadPeopleFromCsv(dlgOpen.FileName)
                 MessageBox.Show($"Loaded {lstPeople.Count} people from file.", "Import Successful", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 isSorted = False
@@ -39,6 +40,40 @@ Public Class Form1
                 numUpDown.Value = If(lstPeople IsNot Nothing AndAlso lstPeople.Count > 0, 1, 0)
                 ValidateSortButton()
                 ValidateExportButton()
+
+                ' Format preview for txtbxDisplay: Name, then each preference on a new indented line
+                Dim sbPreview As New System.Text.StringBuilder()
+                For Each p In lstPeople
+                    sbPreview.AppendLine(p.strName)
+                    If p.lstPreferences.Count > 0 Then
+                        For Each pref In p.lstPreferences
+                            sbPreview.AppendLine("    Preference: " & pref)
+                        Next
+                    End If
+                    sbPreview.AppendLine()
+                Next
+                txtbxDisplay.Text = sbPreview.ToString().TrimEnd()
+
+                ' Show inclusions/exclusions in txtbxInclusionExclusion only if any exist
+                Dim hasIncExc As Boolean = lstPeople.Any(Function(p) Not String.IsNullOrEmpty(p.strInclusion) OrElse Not String.IsNullOrEmpty(p.strExclusion))
+                If hasIncExc Then
+                    Dim sbIncExc As New System.Text.StringBuilder()
+                    For Each p In lstPeople
+                        If Not String.IsNullOrEmpty(p.strInclusion) OrElse Not String.IsNullOrEmpty(p.strExclusion) Then
+                            sbIncExc.Append(p.strName)
+                            If Not String.IsNullOrEmpty(p.strInclusion) Then
+                                sbIncExc.Append($" | Inclusion: {p.strInclusion}")
+                            End If
+                            If Not String.IsNullOrEmpty(p.strExclusion) Then
+                                sbIncExc.Append($" | Exclusion: {p.strExclusion}")
+                            End If
+                            sbIncExc.AppendLine()
+                        End If
+                    Next
+                    txtbxInclusionExclusion.Text = sbIncExc.ToString().TrimEnd()
+                Else
+                    txtbxInclusionExclusion.Clear()
+                End If
             End If
         End Using
     End Sub
@@ -66,6 +101,21 @@ Public Class Form1
         Next
 
         sorter.PreferentialSort(lstPeople, dictGroups, Integer.MaxValue)
+
+        ' Display sorted groups in txtbxDisplay
+        Dim sb As New System.Text.StringBuilder()
+        For i As Integer = 1 To groupCount
+            Dim groupId = i.ToString()
+            sb.AppendLine($"Group {groupId}")
+            Dim members = dictGroups(groupId).Select(Function(p) p.strName).ToList()
+            If members.Count > 0 Then
+                sb.AppendLine(String.Join(Environment.NewLine, members))
+            Else
+                sb.AppendLine("(No members)")
+            End If
+            sb.AppendLine()
+        Next
+        txtbxDisplay.Text = sb.ToString().TrimEnd()
 
         isSorted = True
         ValidateExportButton()
