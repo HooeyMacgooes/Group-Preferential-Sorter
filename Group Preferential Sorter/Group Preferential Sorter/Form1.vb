@@ -53,27 +53,6 @@ Public Class Form1
                     sbPreview.AppendLine()
                 Next
                 txtbxDisplay.Text = sbPreview.ToString().TrimEnd()
-
-                ' Show inclusions/exclusions in txtbxInclusionExclusion only if any exist
-                Dim hasIncExc As Boolean = lstPeople.Any(Function(p) Not String.IsNullOrEmpty(p.strInclusion) OrElse Not String.IsNullOrEmpty(p.strExclusion))
-                If hasIncExc Then
-                    Dim sbIncExc As New System.Text.StringBuilder()
-                    For Each p In lstPeople
-                        If Not String.IsNullOrEmpty(p.strInclusion) OrElse Not String.IsNullOrEmpty(p.strExclusion) Then
-                            sbIncExc.Append(p.strName)
-                            If Not String.IsNullOrEmpty(p.strInclusion) Then
-                                sbIncExc.Append($" | Inclusion: {p.strInclusion}")
-                            End If
-                            If Not String.IsNullOrEmpty(p.strExclusion) Then
-                                sbIncExc.Append($" | Exclusion: {p.strExclusion}")
-                            End If
-                            sbIncExc.AppendLine()
-                        End If
-                    Next
-                    txtbxInclusionExclusion.Text = sbIncExc.ToString().TrimEnd()
-                Else
-                    txtbxInclusionExclusion.Clear()
-                End If
             End If
         End Using
     End Sub
@@ -97,7 +76,6 @@ Public Class Form1
 
         For Each p In lstPeople
             p.strAssignedGroup = Nothing
-            p.hshExcludedGroups.Clear()
         Next
 
         sorter.PreferentialSort(lstPeople, dictGroups, Integer.MaxValue)
@@ -146,7 +124,6 @@ Public Class Form1
 
         For Each p In lstPeople
             p.strAssignedGroup = Nothing
-            p.hshExcludedGroups.Clear()
         Next
 
         sorter.PreferentialSort(lstPeople, dictGroups, Integer.MaxValue)
@@ -187,74 +164,40 @@ Public Class Form1
 
 End Class
 
-
-' This class handles sorting people into groups based on their preferences, inclusion, and exclusion constraints.
+' This class handles sorting people into groups based on their preferences.
 Public Class GroupPreferentialSorter
 
-    ' Assigns people to groups based on inclusion, exclusion, and preferences,
-    ' but only using the numeric group IDs provided in dictGroups.
+    ' Assigns people to groups based on preferences only.
     Public Function PreferentialSort(lstPeople As List(Of Person), dictGroups As Dictionary(Of String, List(Of Person)), intMaxSize As Integer) As Dictionary(Of String, List(Of Person))
-        ' Only allow group IDs that exist in dictGroups (i.e., "1", "2", ..., groupCount)
         Dim validGroupIds = New HashSet(Of String)(dictGroups.Keys)
 
-        ' First, assign people to their inclusion group if specified and valid
+        ' 1. Assign people to their preferred groups, skipping full groups, and only if valid
         For Each objPerson As Person In lstPeople
-            If Not String.IsNullOrEmpty(objPerson.strInclusion) AndAlso validGroupIds.Contains(objPerson.strInclusion) Then
-                Dim strGroupId As String = objPerson.strInclusion
-                If dictGroups(strGroupId).Count < intMaxSize Then
-                    dictGroups(strGroupId).Add(objPerson)
-                    objPerson.strAssignedGroup = strGroupId
+            objPerson.strAssignedGroup = Nothing
+            For Each strPreference As String In objPerson.lstPreferences
+                If validGroupIds.Contains(strPreference) AndAlso dictGroups(strPreference).Count < intMaxSize Then
+                    dictGroups(strPreference).Add(objPerson)
+                    objPerson.strAssignedGroup = strPreference
+                    Exit For
                 End If
-            End If
+            Next
         Next
 
-        ' Add exclusion group to each person's exclusion set if specified and valid
-        For Each objPerson As Person In lstPeople
-            If Not String.IsNullOrEmpty(objPerson.strExclusion) AndAlso validGroupIds.Contains(objPerson.strExclusion) Then
-                objPerson.hshExcludedGroups.Add(objPerson.strExclusion)
-            End If
-        Next
-
-        ' Assign people to their preferred groups, skipping excluded groups and full groups, and only if valid
+        ' 2. Assign any remaining unassigned people to any available group that is not full, round-robin
+        Dim groupIds = dictGroups.Keys.ToList()
+        Dim groupIndex As Integer = 0
         For Each objPerson As Person In lstPeople
             If String.IsNullOrEmpty(objPerson.strAssignedGroup) Then
-                For Each strPreference As String In objPerson.lstPreferences
-                    If validGroupIds.Contains(strPreference) AndAlso
-                       Not objPerson.hshExcludedGroups.Contains(strPreference) AndAlso
-                       dictGroups(strPreference).Count < intMaxSize Then
-                        dictGroups(strPreference).Add(objPerson)
-                        objPerson.strAssignedGroup = strPreference
-                        Exit For
-                    End If
-                Next
-            End If
-        Next
-
-        ' Assign any remaining unassigned people to any available group that is not excluded and not full, round-robin
-        Dim groupIndex As Integer = 1
-        For Each objPerson As Person In lstPeople
-            If String.IsNullOrEmpty(objPerson.strAssignedGroup) Then
-                Dim assigned As Boolean = False
-                For i As Integer = 1 To dictGroups.Count
-                    Dim strGroupId = ((groupIndex - 1 + i - 1) Mod dictGroups.Count + 1).ToString()
-                    If dictGroups(strGroupId).Count < intMaxSize AndAlso Not objPerson.hshExcludedGroups.Contains(strGroupId) Then
+                For i As Integer = 0 To groupIds.Count - 1
+                    Dim idx = (groupIndex + i) Mod groupIds.Count
+                    Dim strGroupId = groupIds(idx)
+                    If dictGroups(strGroupId).Count < intMaxSize Then
                         dictGroups(strGroupId).Add(objPerson)
                         objPerson.strAssignedGroup = strGroupId
-                        groupIndex = (groupIndex Mod dictGroups.Count) + 1
-                        assigned = True
+                        groupIndex = (idx + 1) Mod groupIds.Count
                         Exit For
                     End If
                 Next
-                If Not assigned Then
-                    ' If all groups are full or excluded, assign to the first available group
-                    For Each strGroupId In validGroupIds
-                        If dictGroups(strGroupId).Count < intMaxSize Then
-                            dictGroups(strGroupId).Add(objPerson)
-                            objPerson.strAssignedGroup = strGroupId
-                            Exit For
-                        End If
-                    Next
-                End If
             End If
         Next
 
@@ -281,16 +224,6 @@ Public Class GroupPreferentialSorter
                 End If
             Next
 
-            ' Optional inclusion group.
-            If arrFields.Length > 6 AndAlso Not String.IsNullOrWhiteSpace(arrFields(6)) Then
-                objPerson.strInclusion = arrFields(6).Trim()
-            End If
-
-            ' Optional exclusion group.
-            If arrFields.Length > 7 AndAlso Not String.IsNullOrWhiteSpace(arrFields(7)) Then
-                objPerson.strExclusion = arrFields(7).Trim()
-            End If
-
             lstPeople.Add(objPerson)
         Next
 
@@ -298,29 +231,16 @@ Public Class GroupPreferentialSorter
     End Function
 End Class
 
-' Represents a person with preferences, inclusion/exclusion constraints, and group assignment.
+' Represents a person with preferences and group assignment.
 Public Class Person
 
     Public strName As String ' Person's name
     Public lstPreferences As List(Of String) ' List of preferred group IDs
-    Public strInclusion As String ' Group ID the person must be included in (if any)
-    Public strExclusion As String ' Group ID the person must be excluded from (if any)
     Public strAssignedGroup As String ' The group ID the person was assigned to
-    Public hshExcludedGroups As HashSet(Of String) ' Set of group IDs the person cannot be assigned to
 
-    ' Initializes a new person with empty preferences and exclusions.
+    ' Initializes a new person with empty preferences.
     Public Sub New()
         lstPreferences = New List(Of String)()
-        hshExcludedGroups = New HashSet(Of String)()
         strAssignedGroup = Nothing
     End Sub
 End Class
-
-
-
-
-
-
-
-
-

@@ -23,7 +23,6 @@ Partial Class Form1
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.lblGroupAmount = New System.Windows.Forms.Label()
-        Me.txtbxInclusionExclusion = New System.Windows.Forms.TextBox()
         Me.txtbxDisplay = New System.Windows.Forms.TextBox()
         Me.btnExport = New System.Windows.Forms.Button()
         Me.btnImport = New System.Windows.Forms.Button()
@@ -41,16 +40,6 @@ Partial Class Form1
         Me.lblGroupAmount.Size = New System.Drawing.Size(150, 25)
         Me.lblGroupAmount.TabIndex = 16
         Me.lblGroupAmount.Text = "Group Amount"
-        '
-        'txtbxInclusionExclusion
-        '
-        Me.txtbxInclusionExclusion.Location = New System.Drawing.Point(343, 210)
-        Me.txtbxInclusionExclusion.Multiline = True
-        Me.txtbxInclusionExclusion.Name = "txtbxInclusionExclusion"
-        Me.txtbxInclusionExclusion.ReadOnly = True
-        Me.txtbxInclusionExclusion.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
-        Me.txtbxInclusionExclusion.Size = New System.Drawing.Size(261, 302)
-        Me.txtbxInclusionExclusion.TabIndex = 15
         '
         'txtbxDisplay
         '
@@ -112,7 +101,6 @@ Partial Class Form1
         Me.ClientSize = New System.Drawing.Size(1154, 581)
         Me.Controls.Add(Me.numUpDown)
         Me.Controls.Add(Me.lblGroupAmount)
-        Me.Controls.Add(Me.txtbxInclusionExclusion)
         Me.Controls.Add(Me.txtbxDisplay)
         Me.Controls.Add(Me.btnExport)
         Me.Controls.Add(Me.btnImport)
@@ -127,7 +115,6 @@ Partial Class Form1
     End Sub
 
     Friend WithEvents lblGroupAmount As Label
-    Friend WithEvents txtbxInclusionExclusion As TextBox
     Friend WithEvents txtbxDisplay As TextBox
     Friend WithEvents btnExport As Button
     Friend WithEvents btnImport As Button
