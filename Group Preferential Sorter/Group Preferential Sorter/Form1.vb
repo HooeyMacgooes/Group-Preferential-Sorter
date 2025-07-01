@@ -1,38 +1,49 @@
 ﻿Imports System.IO
 Imports System.Windows.Forms
 
+' Main form for the group sorting application.
+' Handles importing, sorting, and exporting people into groups based on their preferences.
 Public Class Form1
+    ' List of all people loaded from the CSV file.
     Private lstPeople As List(Of Person)
+    ' Sorter instance to handle group assignment logic.
     Private sorter As New GroupPreferentialSorter()
+    ' Flag to indicate if the current list has been sorted.
     Private isSorted As Boolean = False
 
+    ' Form load event: disables sort/export buttons and sets up event handlers.
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         btnSort.Enabled = False
         btnExport.Enabled = False
         AddHandler numUpDown.ValueChanged, AddressOf numUpDown_ValueChanged
     End Sub
 
+    ' Event handler for group count value change.
     Private Sub numUpDown_ValueChanged(sender As Object, e As EventArgs)
         ValidateSortButton()
         ValidateExportButton()
     End Sub
 
+    ' Enables or disables the Sort button based on whether people are loaded and group count is valid.
     Private Sub ValidateSortButton()
         btnSort.Enabled = lstPeople IsNot Nothing AndAlso
-                        lstPeople.Count > 0 AndAlso
-                        numUpDown.Value > 0
+                          lstPeople.Count > 0 AndAlso
+                          numUpDown.Value > 0
     End Sub
 
+    ' Enables or disables the Export button based on whether sorting has occurred and group count is valid.
     Private Sub ValidateExportButton()
         btnExport.Enabled = isSorted AndAlso numUpDown.Value > 0
     End Sub
 
+    ' Handles importing people from a CSV file.
+    ' Populates lstPeople and updates the UI with a preview of names and preferences.
     Private Sub btnImport_Click(sender As Object, e As EventArgs) Handles btnImport.Click
         Using dlgOpen As New OpenFileDialog()
             dlgOpen.Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*"
             dlgOpen.Title = "Select People CSV File"
             If dlgOpen.ShowDialog() = DialogResult.OK Then
-                ' Load people from CSV
+                ' Load people from CSV file.
                 lstPeople = sorter.LoadPeopleFromCsv(dlgOpen.FileName)
                 MessageBox.Show($"Loaded {lstPeople.Count} people from file.", "Import Successful", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 isSorted = False
@@ -41,7 +52,7 @@ Public Class Form1
                 ValidateSortButton()
                 ValidateExportButton()
 
-                ' Format preview for txtbxDisplay: Name, then each preference on a new indented line
+                ' Display a preview of each person's name and their preferences.
                 Dim sbPreview As New System.Text.StringBuilder()
                 For Each p In lstPeople
                     sbPreview.AppendLine(p.strName)
@@ -57,6 +68,8 @@ Public Class Form1
         End Using
     End Sub
 
+    ' Handles sorting people into groups based on their preferences.
+    ' Updates the display with the sorted groups.
     Private Sub btnSort_Click(sender As Object, e As EventArgs) Handles btnSort.Click
         If lstPeople Is Nothing OrElse lstPeople.Count = 0 Then
             MessageBox.Show("No people loaded to sort.", "Sort Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
@@ -69,18 +82,21 @@ Public Class Form1
             Return
         End If
 
+        ' Initialize group dictionary with empty lists for each group.
         Dim dictGroups As New Dictionary(Of String, List(Of Person))()
         For i As Integer = 1 To groupCount
             dictGroups(i.ToString()) = New List(Of Person)()
         Next
 
+        ' Clear previous group assignments.
         For Each p In lstPeople
             p.strAssignedGroup = Nothing
         Next
 
+        ' Perform the sorting.
         sorter.PreferentialSort(lstPeople, dictGroups, Integer.MaxValue)
 
-        ' Display sorted groups in txtbxDisplay
+        ' Build and display the sorted groups in the display textbox.
         Dim sb As New System.Text.StringBuilder()
         For i As Integer = 1 To groupCount
             Dim groupId = i.ToString()
@@ -100,6 +116,8 @@ Public Class Form1
         MessageBox.Show("Sorting complete. Groups have been assigned.", "Sort", MessageBoxButtons.OK, MessageBoxIcon.Information)
     End Sub
 
+    ' Handles exporting the sorted groups to a CSV file.
+    ' Each row contains the group number and the names of its members.
     Private Sub btnExport_Click(sender As Object, e As EventArgs) Handles btnExport.Click
         If lstPeople Is Nothing OrElse lstPeople.Count = 0 Then
             MessageBox.Show("No people loaded to export.", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
@@ -117,17 +135,21 @@ Public Class Form1
             Return
         End If
 
+        ' Initialize group dictionary for export.
         Dim dictGroups As New Dictionary(Of String, List(Of Person))()
         For i As Integer = 1 To groupCount
             dictGroups(i.ToString()) = New List(Of Person)()
         Next
 
+        ' Clear previous group assignments.
         For Each p In lstPeople
             p.strAssignedGroup = Nothing
         Next
 
+        ' Perform the sorting again to ensure export matches the display.
         sorter.PreferentialSort(lstPeople, dictGroups, Integer.MaxValue)
 
+        ' Determine the maximum group size for CSV formatting.
         Dim maxGroupSize As Integer = dictGroups.Values.Max(Function(g) g.Count)
 
         Using dlgSave As New SaveFileDialog()
@@ -137,15 +159,18 @@ Public Class Form1
             If dlgSave.ShowDialog() = DialogResult.OK Then
                 Try
                     Using sw As New StreamWriter(dlgSave.FileName, False)
+                        ' Write CSV header.
                         Dim header As String = "Group Number"
                         For i As Integer = 1 To maxGroupSize
                             header &= $",Person {i}"
                         Next
                         sw.WriteLine(header)
 
+                        ' Write each group and its members.
                         For i As Integer = 1 To groupCount
                             Dim groupId = i.ToString()
                             Dim members = dictGroups(groupId).Select(Function(p) p.strName).ToList()
+                            ' Pad with empty strings to ensure all rows have the same number of columns.
                             While members.Count < maxGroupSize
                                 members.Add("")
                             End While
@@ -162,16 +187,38 @@ Public Class Form1
         End Using
     End Sub
 
+
+    Private Sub btnHelp_Click(sender As Object, e As EventArgs) Handles btnHelp.Click
+        MessageBox.Show(
+        "Instructions:" & Environment.NewLine &
+        "- Set the number of groups using the up/down arrows on the left." & Environment.NewLine &
+        "- Import your CSV file using the 'Import' button. The file should follow the required format." & Environment.NewLine &
+        "- Click 'Sort' to assign people to groups based on their preferences." & Environment.NewLine &
+        "- Click 'Export' to save the sorted groups to a CSV file." & Environment.NewLine &
+        Environment.NewLine &
+        "Ensure all names and preferences in your CSV are consistent." & Environment.NewLine &
+        "For more assistance, questions or requests please comment under the github page at (link)",
+        "Help",
+        MessageBoxButtons.OK,
+        MessageBoxIcon.Information
+    )
+    End Sub
+
 End Class
 
-' This class handles sorting people into groups based on their preferences.
+' Handles sorting logic for assigning people to groups based on their preferences.
 Public Class GroupPreferentialSorter
 
-    ' Assigns people to groups based on preferences only.
+    ' Assigns people to groups based on their preferences.
+    ' 1. Tries to assign each person to their preferred group (if not full).
+    ' 2. Assigns any unassigned people to groups in round-robin fashion.
+    ' lstPeople: List of people to assign.
+    ' dictGroups: Dictionary of group ID to list of people.
+    ' intMaxSize: Maximum allowed size for each group.
     Public Function PreferentialSort(lstPeople As List(Of Person), dictGroups As Dictionary(Of String, List(Of Person)), intMaxSize As Integer) As Dictionary(Of String, List(Of Person))
         Dim validGroupIds = New HashSet(Of String)(dictGroups.Keys)
 
-        ' 1. Assign people to their preferred groups, skipping full groups, and only if valid
+        ' First, try to assign each person to their preferred group.
         For Each objPerson As Person In lstPeople
             objPerson.strAssignedGroup = Nothing
             For Each strPreference As String In objPerson.lstPreferences
@@ -183,7 +230,7 @@ Public Class GroupPreferentialSorter
             Next
         Next
 
-        ' 2. Assign any remaining unassigned people to any available group that is not full, round-robin
+        ' Next, assign any unassigned people to any available group (round-robin).
         Dim groupIds = dictGroups.Keys.ToList()
         Dim groupIndex As Integer = 0
         For Each objPerson As Person In lstPeople
@@ -217,7 +264,7 @@ Public Class GroupPreferentialSorter
             Dim objPerson As New Person()
             objPerson.strName = arrFields(0).Trim()
 
-            ' Add up to 5 preferences from the CSV fields.
+            ' Add up to 5 preferences from the CSV fields (columns 1-5).
             For intI As Integer = 1 To 5
                 If arrFields.Length > intI AndAlso Not String.IsNullOrWhiteSpace(arrFields(intI)) Then
                     objPerson.lstPreferences.Add(arrFields(intI).Trim())
@@ -231,7 +278,7 @@ Public Class GroupPreferentialSorter
     End Function
 End Class
 
-' Represents a person with preferences and group assignment.
+' Represents a person with a name, a list of group preferences, and their assigned group.
 Public Class Person
 
     Public strName As String ' Person's name
