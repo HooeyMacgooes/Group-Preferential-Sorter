@@ -29,12 +29,14 @@ Partial Class Form1
         Me.btnHelp = New System.Windows.Forms.Button()
         Me.btnSort = New System.Windows.Forms.Button()
         Me.numUpDown = New System.Windows.Forms.NumericUpDown()
+        Me.btnFun = New System.Windows.Forms.Button()
         CType(Me.numUpDown, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'lblGroupAmount
         '
         Me.lblGroupAmount.AutoSize = True
+        Me.lblGroupAmount.ForeColor = System.Drawing.SystemColors.ButtonHighlight
         Me.lblGroupAmount.Location = New System.Drawing.Point(69, 49)
         Me.lblGroupAmount.Name = "lblGroupAmount"
         Me.lblGroupAmount.Size = New System.Drawing.Size(150, 25)
@@ -43,6 +45,7 @@ Partial Class Form1
         '
         'txtbxDisplay
         '
+        Me.txtbxDisplay.BackColor = System.Drawing.SystemColors.AppWorkspace
         Me.txtbxDisplay.Location = New System.Drawing.Point(701, 62)
         Me.txtbxDisplay.Multiline = True
         Me.txtbxDisplay.Name = "txtbxDisplay"
@@ -80,12 +83,13 @@ Partial Class Form1
         '
         'btnSort
         '
-        Me.btnSort.Location = New System.Drawing.Point(343, 62)
+        Me.btnSort.BackColor = System.Drawing.Color.DarkGray
+        Me.btnSort.Location = New System.Drawing.Point(329, 234)
         Me.btnSort.Name = "btnSort"
         Me.btnSort.Size = New System.Drawing.Size(261, 117)
         Me.btnSort.TabIndex = 9
         Me.btnSort.Text = "Sort"
-        Me.btnSort.UseVisualStyleBackColor = True
+        Me.btnSort.UseVisualStyleBackColor = False
         '
         'numUpDown
         '
@@ -94,11 +98,22 @@ Partial Class Form1
         Me.numUpDown.Size = New System.Drawing.Size(120, 31)
         Me.numUpDown.TabIndex = 17
         '
+        'btnFun
+        '
+        Me.btnFun.Location = New System.Drawing.Point(402, 532)
+        Me.btnFun.Name = "btnFun"
+        Me.btnFun.Size = New System.Drawing.Size(171, 37)
+        Me.btnFun.TabIndex = 18
+        Me.btnFun.Text = "Fun Button"
+        Me.btnFun.UseVisualStyleBackColor = True
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(12.0!, 25.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        Me.BackColor = System.Drawing.Color.FromArgb(CType(CType(64, Byte), Integer), CType(CType(64, Byte), Integer), CType(CType(64, Byte), Integer))
         Me.ClientSize = New System.Drawing.Size(1154, 581)
+        Me.Controls.Add(Me.btnFun)
         Me.Controls.Add(Me.numUpDown)
         Me.Controls.Add(Me.lblGroupAmount)
         Me.Controls.Add(Me.txtbxDisplay)
@@ -121,4 +136,5 @@ Partial Class Form1
     Friend WithEvents btnHelp As Button
     Friend WithEvents btnSort As Button
     Friend WithEvents numUpDown As NumericUpDown
+    Friend WithEvents btnFun As Button
 End Class

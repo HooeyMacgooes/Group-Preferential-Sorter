@@ -16,6 +16,10 @@ Public Class Form1
         btnSort.Enabled = False
         btnExport.Enabled = False
         AddHandler numUpDown.ValueChanged, AddressOf numUpDown_ValueChanged
+
+        ' Store original form and control sizes for scaling
+        originalFormSize = Me.ClientSize
+        StoreOriginalControlBounds(Me.Controls)
     End Sub
 
     ' Event handler for group count value change.
@@ -202,6 +206,89 @@ Public Class Form1
         MessageBoxButtons.OK,
         MessageBoxIcon.Information
     )
+    End Sub
+
+    'Does the funny
+    Private Sub btnFun_Click(sender As Object, e As EventArgs) Handles btnFun.Click
+        ' Shrink factor (e.g., 0.8 = shrink to 80% of original size)
+        Dim shrinkFactor As Double = 0.8
+
+        ' Recursively shrink all controls on the form
+        ShrinkControls(Me.Controls, shrinkFactor)
+
+        ' Shrink the form itself
+        Me.Width = CInt(Me.Width * shrinkFactor)
+        Me.Height = CInt(Me.Height * shrinkFactor)
+    End Sub
+
+    ''' <summary>
+    ''' Recursively shrinks all controls in a control collection.
+    ''' </summary>
+    Private Sub ShrinkControls(ctrls As Control.ControlCollection, factor As Double)
+        For Each ctrl As Control In ctrls
+            ' Shrink size and location
+            ctrl.Width = Math.Max(10, CInt(ctrl.Width * factor))
+            ctrl.Height = Math.Max(10, CInt(ctrl.Height * factor))
+            ctrl.Left = CInt(ctrl.Left * factor)
+            ctrl.Top = CInt(ctrl.Top * factor)
+
+            ' Shrink font size if possible
+            If ctrl.Font IsNot Nothing Then
+                Dim newSize As Single = Math.Max(6, ctrl.Font.Size * CSng(factor))
+                ctrl.Font = New Font(ctrl.Font.FontFamily, newSize, ctrl.Font.Style)
+            End If
+
+            ' Recursively shrink child controls (for containers)
+            If ctrl.HasChildren Then
+                ShrinkControls(ctrl.Controls, factor)
+            End If
+        Next
+    End Sub
+
+    ' Add these fields to Form1 (at the top, after your other fields)
+    Private originalFormSize As Size
+    Private originalControlBounds As New Dictionary(Of Control, Rectangle)
+    Private originalFontSizes As New Dictionary(Of Control, Single)
+
+    ' Store the original size and position of all controls and the form
+    Private Sub StoreOriginalControlBounds(ctrls As Control.ControlCollection)
+        For Each ctrl As Control In ctrls
+            originalControlBounds(ctrl) = ctrl.Bounds
+            originalFontSizes(ctrl) = ctrl.Font.Size
+            If ctrl.HasChildren Then
+                StoreOriginalControlBounds(ctrl.Controls)
+            End If
+        Next
+    End Sub
+
+    ' Scale all controls and fonts based on the new form size
+    Private Sub ScaleControls(ctrls As Control.ControlCollection, scaleX As Double, scaleY As Double)
+        For Each ctrl As Control In ctrls
+            If originalControlBounds.ContainsKey(ctrl) Then
+                Dim orig = originalControlBounds(ctrl)
+                ctrl.Left = CInt(orig.Left * scaleX)
+                ctrl.Top = CInt(orig.Top * scaleY)
+                ctrl.Width = Math.Max(10, CInt(orig.Width * scaleX))
+                ctrl.Height = Math.Max(10, CInt(orig.Height * scaleY))
+            End If
+            If originalFontSizes.ContainsKey(ctrl) Then
+                Dim newFontSize As Single = Math.Max(6, CSng(originalFontSizes(ctrl) * Math.Min(scaleX, scaleY)))
+                ctrl.Font = New Font(ctrl.Font.FontFamily, newFontSize, ctrl.Font.Style)
+            End If
+            If ctrl.HasChildren Then
+                ScaleControls(ctrl.Controls, scaleX, scaleY)
+            End If
+        Next
+    End Sub
+
+
+    ' Handle the Resize event to scale controls
+    Protected Overrides Sub OnResize(e As EventArgs)
+        MyBase.OnResize(e)
+        If originalFormSize.Width = 0 OrElse originalFormSize.Height = 0 Then Return
+        Dim scaleX As Double = Me.ClientSize.Width / originalFormSize.Width
+        Dim scaleY As Double = Me.ClientSize.Height / originalFormSize.Height
+        ScaleControls(Me.Controls, scaleX, scaleY)
     End Sub
 
 End Class
