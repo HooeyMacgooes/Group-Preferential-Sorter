@@ -28,8 +28,9 @@ Partial Class Form1
         Me.btnExport = New System.Windows.Forms.Button()
         Me.btnImport = New System.Windows.Forms.Button()
         Me.btnHelp = New System.Windows.Forms.Button()
-        Me.domGroupAmount = New System.Windows.Forms.DomainUpDown()
         Me.btnSort = New System.Windows.Forms.Button()
+        Me.numUpDown = New System.Windows.Forms.NumericUpDown()
+        CType(Me.numUpDown, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'lblGroupAmount
@@ -88,15 +89,6 @@ Partial Class Form1
         Me.btnHelp.Text = "Help"
         Me.btnHelp.UseVisualStyleBackColor = True
         '
-        'domGroupAmount
-        '
-        Me.domGroupAmount.Location = New System.Drawing.Point(74, 88)
-        Me.domGroupAmount.Name = "domGroupAmount"
-        Me.domGroupAmount.Size = New System.Drawing.Size(131, 31)
-        Me.domGroupAmount.TabIndex = 10
-        Me.domGroupAmount.Text = "1"
-        Me.domGroupAmount.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
-        '
         'btnSort
         '
         Me.btnSort.Location = New System.Drawing.Point(343, 62)
@@ -106,21 +98,29 @@ Partial Class Form1
         Me.btnSort.Text = "Sort"
         Me.btnSort.UseVisualStyleBackColor = True
         '
+        'numUpDown
+        '
+        Me.numUpDown.Location = New System.Drawing.Point(74, 88)
+        Me.numUpDown.Name = "numUpDown"
+        Me.numUpDown.Size = New System.Drawing.Size(120, 31)
+        Me.numUpDown.TabIndex = 17
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(12.0!, 25.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(1154, 581)
+        Me.Controls.Add(Me.numUpDown)
         Me.Controls.Add(Me.lblGroupAmount)
         Me.Controls.Add(Me.txtbxInclusionExclusion)
         Me.Controls.Add(Me.txtbxDisplay)
         Me.Controls.Add(Me.btnExport)
         Me.Controls.Add(Me.btnImport)
         Me.Controls.Add(Me.btnHelp)
-        Me.Controls.Add(Me.domGroupAmount)
         Me.Controls.Add(Me.btnSort)
         Me.Name = "Form1"
         Me.Text = "Form1"
+        CType(Me.numUpDown, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -132,6 +132,6 @@ Partial Class Form1
     Friend WithEvents btnExport As Button
     Friend WithEvents btnImport As Button
     Friend WithEvents btnHelp As Button
-    Friend WithEvents domGroupAmount As DomainUpDown
     Friend WithEvents btnSort As Button
+    Friend WithEvents numUpDown As NumericUpDown
 End Class
