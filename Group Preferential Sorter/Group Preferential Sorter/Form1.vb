@@ -4,19 +4,72 @@ Imports System.Windows.Forms
 Public Class Form1
     Private lstPeople As List(Of Person)
     Private sorter As New GroupPreferentialSorter()
+    Private isSorted As Boolean = False
 
-    ' Handles the Import button click event
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        btnSort.Enabled = False
+        btnExport.Enabled = False
+        AddHandler numUpDown.ValueChanged, AddressOf numUpDown_ValueChanged
+    End Sub
+
+    Private Sub numUpDown_ValueChanged(sender As Object, e As EventArgs)
+        ValidateSortButton()
+        ValidateExportButton()
+    End Sub
+
+    Private Sub ValidateSortButton()
+        btnSort.Enabled = lstPeople IsNot Nothing AndAlso
+                        lstPeople.Count > 0 AndAlso
+                        numUpDown.Value > 0
+    End Sub
+
+    Private Sub ValidateExportButton()
+        btnExport.Enabled = isSorted AndAlso numUpDown.Value > 0
+    End Sub
+
     Private Sub btnImport_Click(sender As Object, e As EventArgs) Handles btnImport.Click
         Using dlgOpen As New OpenFileDialog()
             dlgOpen.Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*"
             dlgOpen.Title = "Select People CSV File"
             If dlgOpen.ShowDialog() = DialogResult.OK Then
                 lstPeople = sorter.LoadPeopleFromCsv(dlgOpen.FileName)
-                MessageBox.Show("Loaded " & lstPeople.Count & " people from file.", "Import Successful", MessageBoxButtons.OK, MessageBoxIcon.Information)
-                ' Now you can use lstPeople and update your UI as needed
+                MessageBox.Show($"Loaded {lstPeople.Count} people from file.", "Import Successful", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                isSorted = False
+                numUpDown.Maximum = If(lstPeople IsNot Nothing, lstPeople.Count, 1)
+                numUpDown.Value = If(lstPeople IsNot Nothing AndAlso lstPeople.Count > 0, 1, 0)
+                ValidateSortButton()
+                ValidateExportButton()
             End If
         End Using
-        numUpDown.Maximum = lstPeople.Count
+    End Sub
+
+    Private Sub btnSort_Click(sender As Object, e As EventArgs) Handles btnSort.Click
+        If lstPeople Is Nothing OrElse lstPeople.Count = 0 Then
+            MessageBox.Show("No people loaded to sort.", "Sort Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return
+        End If
+
+        Dim groupCount As Integer
+        If Not Integer.TryParse(numUpDown.Value, groupCount) OrElse groupCount <= 0 Then
+            MessageBox.Show("Invalid group amount.", "Sort Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return
+        End If
+
+        Dim dictGroups As New Dictionary(Of String, List(Of Person))()
+        For i As Integer = 1 To groupCount
+            dictGroups(i.ToString()) = New List(Of Person)()
+        Next
+
+        For Each p In lstPeople
+            p.strAssignedGroup = Nothing
+            p.hshExcludedGroups.Clear()
+        Next
+
+        sorter.PreferentialSort(lstPeople, dictGroups, Integer.MaxValue)
+
+        isSorted = True
+        ValidateExportButton()
+        MessageBox.Show("Sorting complete. Groups have been assigned.", "Sort", MessageBoxButtons.OK, MessageBoxIcon.Information)
     End Sub
 
     Private Sub btnExport_Click(sender As Object, e As EventArgs) Handles btnExport.Click
@@ -25,29 +78,29 @@ Public Class Form1
             Return
         End If
 
-        ' Get group count from user input
+        If Not isSorted Then
+            MessageBox.Show("Please sort the groups before exporting.", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return
+        End If
+
         Dim groupCount As Integer
         If Not Integer.TryParse(numUpDown.Value, groupCount) OrElse groupCount <= 0 Then
             MessageBox.Show("Invalid group amount.", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
             Return
         End If
 
-        ' Prepare group dictionary with numeric group IDs
         Dim dictGroups As New Dictionary(Of String, List(Of Person))()
         For i As Integer = 1 To groupCount
             dictGroups(i.ToString()) = New List(Of Person)()
         Next
 
-        ' Clear previous assignments
         For Each p In lstPeople
             p.strAssignedGroup = Nothing
             p.hshExcludedGroups.Clear()
         Next
 
-        ' Sort people into groups using the existing sorter
         sorter.PreferentialSort(lstPeople, dictGroups, Integer.MaxValue)
 
-        ' Find the largest group size for consistent columns
         Dim maxGroupSize As Integer = dictGroups.Values.Max(Function(g) g.Count)
 
         Using dlgSave As New SaveFileDialog()
@@ -57,18 +110,15 @@ Public Class Form1
             If dlgSave.ShowDialog() = DialogResult.OK Then
                 Try
                     Using sw As New StreamWriter(dlgSave.FileName, False)
-                        ' Write header
                         Dim header As String = "Group Number"
                         For i As Integer = 1 To maxGroupSize
-                            header &= ",Person " & i
+                            header &= $",Person {i}"
                         Next
                         sw.WriteLine(header)
 
-                        ' Write each group as a row
                         For i As Integer = 1 To groupCount
                             Dim groupId = i.ToString()
                             Dim members = dictGroups(groupId).Select(Function(p) p.strName).ToList()
-                            ' Pad with empty strings to match maxGroupSize
                             While members.Count < maxGroupSize
                                 members.Add("")
                             End While
@@ -83,49 +133,6 @@ Public Class Form1
                 End Try
             End If
         End Using
-    End Sub
-
-    Private Sub btnSort_Click(sender As Object, e As EventArgs) Handles btnSort.Click
-        If lstPeople Is Nothing OrElse lstPeople.Count = 0 Then
-            MessageBox.Show("No people loaded to sort.", "Sort Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-            Return
-        End If
-
-        ' Gather all group IDs from preferences, inclusions, and exclusions
-        Dim groupIds As New HashSet(Of String)()
-        For Each p In lstPeople
-            For Each pref In p.lstPreferences
-                If Not String.IsNullOrWhiteSpace(pref) Then groupIds.Add(pref)
-            Next
-            If Not String.IsNullOrWhiteSpace(p.strInclusion) Then groupIds.Add(p.strInclusion)
-            If Not String.IsNullOrWhiteSpace(p.strExclusion) Then groupIds.Add(p.strExclusion)
-        Next
-
-        If groupIds.Count = 0 Then
-            MessageBox.Show("No group IDs found in data.", "Sort Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-            Return
-        End If
-
-        ' Prepare group dictionary using all found group IDs
-        Dim dictGroups As New Dictionary(Of String, List(Of Person))()
-        For Each gid In groupIds
-            dictGroups(gid) = New List(Of Person)()
-        Next
-
-        ' Clear previous assignments
-        For Each p In lstPeople
-            p.strAssignedGroup = Nothing
-            p.hshExcludedGroups.Clear()
-        Next
-
-        ' Sort people into groups using the sorter
-        sorter.PreferentialSort(lstPeople, dictGroups, Integer.MaxValue)
-
-        For Each p In lstPeople
-            Debug.WriteLine(p.strName & " assigned to group " & p.strAssignedGroup)
-        Next
-
-        MessageBox.Show("Sorting complete. Groups have been assigned.", "Sort", MessageBoxButtons.OK, MessageBoxIcon.Information)
     End Sub
 
 End Class
