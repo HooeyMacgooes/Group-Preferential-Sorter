@@ -22,6 +22,7 @@ Partial Class Form1
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(Form1))
         Me.lblGroupAmount = New System.Windows.Forms.Label()
         Me.txtbxDisplay = New System.Windows.Forms.TextBox()
         Me.btnExport = New System.Windows.Forms.Button()
@@ -36,16 +37,18 @@ Partial Class Form1
         'lblGroupAmount
         '
         Me.lblGroupAmount.AutoSize = True
+        Me.lblGroupAmount.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.0!)
         Me.lblGroupAmount.ForeColor = System.Drawing.SystemColors.ButtonHighlight
-        Me.lblGroupAmount.Location = New System.Drawing.Point(69, 49)
+        Me.lblGroupAmount.Location = New System.Drawing.Point(39, 63)
         Me.lblGroupAmount.Name = "lblGroupAmount"
-        Me.lblGroupAmount.Size = New System.Drawing.Size(150, 25)
+        Me.lblGroupAmount.Size = New System.Drawing.Size(154, 26)
         Me.lblGroupAmount.TabIndex = 16
         Me.lblGroupAmount.Text = "Group Amount"
         '
         'txtbxDisplay
         '
-        Me.txtbxDisplay.BackColor = System.Drawing.SystemColors.AppWorkspace
+        Me.txtbxDisplay.BackColor = System.Drawing.SystemColors.ControlDarkDark
+        Me.txtbxDisplay.BorderStyle = System.Windows.Forms.BorderStyle.None
         Me.txtbxDisplay.Location = New System.Drawing.Point(701, 62)
         Me.txtbxDisplay.Multiline = True
         Me.txtbxDisplay.Name = "txtbxDisplay"
@@ -56,34 +59,38 @@ Partial Class Form1
         '
         'btnExport
         '
-        Me.btnExport.Location = New System.Drawing.Point(74, 137)
+        Me.btnExport.BackgroundImage = CType(resources.GetObject("btnExport.BackgroundImage"), System.Drawing.Image)
+        Me.btnExport.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
+        Me.btnExport.Location = New System.Drawing.Point(64, 180)
         Me.btnExport.Name = "btnExport"
-        Me.btnExport.Size = New System.Drawing.Size(131, 109)
+        Me.btnExport.Size = New System.Drawing.Size(79, 71)
         Me.btnExport.TabIndex = 13
-        Me.btnExport.Text = "Export"
         Me.btnExport.UseVisualStyleBackColor = True
         '
         'btnImport
         '
-        Me.btnImport.Location = New System.Drawing.Point(74, 285)
+        Me.btnImport.BackgroundImage = CType(resources.GetObject("btnImport.BackgroundImage"), System.Drawing.Image)
+        Me.btnImport.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
+        Me.btnImport.Location = New System.Drawing.Point(64, 280)
         Me.btnImport.Name = "btnImport"
-        Me.btnImport.Size = New System.Drawing.Size(131, 109)
+        Me.btnImport.Size = New System.Drawing.Size(79, 71)
         Me.btnImport.TabIndex = 12
-        Me.btnImport.Text = "Import"
         Me.btnImport.UseVisualStyleBackColor = True
         '
         'btnHelp
         '
-        Me.btnHelp.Location = New System.Drawing.Point(74, 423)
+        Me.btnHelp.BackgroundImage = CType(resources.GetObject("btnHelp.BackgroundImage"), System.Drawing.Image)
+        Me.btnHelp.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
+        Me.btnHelp.Location = New System.Drawing.Point(64, 386)
         Me.btnHelp.Name = "btnHelp"
-        Me.btnHelp.Size = New System.Drawing.Size(131, 109)
+        Me.btnHelp.Size = New System.Drawing.Size(79, 71)
         Me.btnHelp.TabIndex = 11
-        Me.btnHelp.Text = "Help"
         Me.btnHelp.UseVisualStyleBackColor = True
         '
         'btnSort
         '
-        Me.btnSort.BackColor = System.Drawing.Color.DarkGray
+        Me.btnSort.BackColor = System.Drawing.Color.Black
+        Me.btnSort.ForeColor = System.Drawing.Color.White
         Me.btnSort.Location = New System.Drawing.Point(329, 234)
         Me.btnSort.Name = "btnSort"
         Me.btnSort.Size = New System.Drawing.Size(261, 117)
@@ -93,19 +100,24 @@ Partial Class Form1
         '
         'numUpDown
         '
-        Me.numUpDown.Location = New System.Drawing.Point(74, 88)
+        Me.numUpDown.BackColor = System.Drawing.Color.Gray
+        Me.numUpDown.BorderStyle = System.Windows.Forms.BorderStyle.None
+        Me.numUpDown.ForeColor = System.Drawing.Color.White
+        Me.numUpDown.Location = New System.Drawing.Point(44, 106)
         Me.numUpDown.Name = "numUpDown"
-        Me.numUpDown.Size = New System.Drawing.Size(120, 31)
+        Me.numUpDown.Size = New System.Drawing.Size(120, 27)
         Me.numUpDown.TabIndex = 17
         '
         'btnFun
         '
-        Me.btnFun.Location = New System.Drawing.Point(402, 532)
+        Me.btnFun.BackColor = System.Drawing.Color.Black
+        Me.btnFun.ForeColor = System.Drawing.Color.White
+        Me.btnFun.Location = New System.Drawing.Point(368, 446)
         Me.btnFun.Name = "btnFun"
         Me.btnFun.Size = New System.Drawing.Size(171, 37)
         Me.btnFun.TabIndex = 18
         Me.btnFun.Text = "Fun Button"
-        Me.btnFun.UseVisualStyleBackColor = True
+        Me.btnFun.UseVisualStyleBackColor = False
         '
         'Form1
         '

@@ -66,11 +66,72 @@ Public Class Form1
                         Next
                     End If
                     sbPreview.AppendLine()
+                    txtbxDisplay.Text = sbPreview.ToString().TrimEnd()
                 Next
-                txtbxDisplay.Text = sbPreview.ToString().TrimEnd()
             End If
         End Using
     End Sub
+
+    ' ... (rest of your code above remains unchanged)
+
+    ' --- Konami Code Detection and File Generation ---
+
+    ' Track the sequence of key presses for Konami code detection
+    Private konamiSequence As Keys() = {
+    Keys.Up, Keys.Up, Keys.Down, Keys.Down,
+    Keys.Left, Keys.Right, Keys.Left, Keys.Right,
+    Keys.B, Keys.A, Keys.Enter
+}
+    Private konamiIndex As Integer = 0
+
+    ' Number of text files to create when Konami code is entered
+    Private Const KonamiFileCount As Integer = 5
+
+    ' Attach this handler in Form1_Load
+    Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
+        MyBase.OnKeyDown(e)
+        HandleKonamiCode(e.KeyCode)
+    End Sub
+
+    ''' <summary>
+    ''' Handles Konami code key sequence and triggers file creation when matched.
+    ''' </summary>
+    Private Sub HandleKonamiCode(key As Keys)
+        If key = konamiSequence(konamiIndex) Then
+            konamiIndex += 1
+            If konamiIndex = konamiSequence.Length Then
+                konamiIndex = 0
+                CreateKonamiTextFiles(KonamiFileCount)
+            End If
+        Else
+            ' Reset if wrong key
+            If key = konamiSequence(0) Then
+                konamiIndex = 1
+            Else
+                konamiIndex = 0
+            End If
+        End If
+    End Sub
+
+    ''' <summary>
+    ''' Creates the specified number of text files, each filled with random Long values.
+    ''' </summary>
+    Private Sub CreateKonamiTextFiles(fileCount As Integer)
+        Dim folderPath As String = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+        Dim rnd As New Random()
+        Dim linesPerFile As Integer = 100
+        For i As Integer = 1 To fileCount
+            Dim filePath As String = Path.Combine(folderPath, $"KonamiLongs_{i}.txt")
+            Using sw As New StreamWriter(filePath, False)
+                For j As Integer = 1 To linesPerFile
+                    Dim value As Long = CLng(rnd.Next(Integer.MinValue, Integer.MaxValue)) << 32 Or CLng(rnd.Next(Integer.MinValue, Integer.MaxValue))
+                    sw.WriteLine(value)
+                Next
+            End Using
+        Next
+        MessageBox.Show($"{fileCount} text files with random Long values have been created on your Desktop.", "Konami Code Activated", MessageBoxButtons.OK, MessageBoxIcon.Information)
+    End Sub
+
 
     ' Handles sorting people into groups based on their preferences.
     ' Updates the display with the sorted groups.
@@ -211,7 +272,7 @@ Public Class Form1
     'Does the funny
     Private Sub btnFun_Click(sender As Object, e As EventArgs) Handles btnFun.Click
         ' Shrink factor (e.g., 0.8 = shrink to 80% of original size)
-        Dim shrinkFactor As Double = 0.8
+        Dim shrinkFactor As Double = 0.01
 
         ' Recursively shrink all controls on the form
         ShrinkControls(Me.Controls, shrinkFactor)
@@ -367,7 +428,6 @@ End Class
 
 ' Represents a person with a name, a list of group preferences, and their assigned group.
 Public Class Person
-
     Public strName As String ' Person's name
     Public lstPreferences As List(Of String) ' List of preferred group IDs
     Public strAssignedGroup As String ' The group ID the person was assigned to
