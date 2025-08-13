@@ -2,7 +2,7 @@
 Imports System.Windows.Forms
 
 ' Main form for the group sorting application.
-' Handles importing, sorting, and exporting people into groups based on their preferences.
+' Handles importing, sorting, exporting, UI scaling, and fun/secret features.
 Public Class Form1
     ' List of all people loaded from the CSV file.
     Private lstPeople As List(Of Person)
@@ -11,11 +11,15 @@ Public Class Form1
     ' Flag to indicate if the current list has been sorted.
     Private isSorted As Boolean = False
 
-    ' Form load event: disables sort/export buttons and sets up event handlers.
+    ' For scaling controls when resizing the form
+    Private originalFormSize As Size
+    Private originalControlBounds As New Dictionary(Of Control, Rectangle)
+    Private originalFontSizes As New Dictionary(Of Control, Single)
+
+    ' Form load event: disables sort/export buttons, sets up event handlers, and stores original control sizes for scaling.
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         btnSort.Enabled = False
         btnExport.Enabled = False
-        AddHandler numUpDown.ValueChanged, AddressOf numUpDown_ValueChanged
 
         ' Store original form and control sizes for scaling
         originalFormSize = Me.ClientSize
@@ -44,6 +48,7 @@ Public Class Form1
     ' Populates lstPeople and updates the UI with a preview of names and preferences.
     Private Sub btnImport_Click(sender As Object, e As EventArgs) Handles btnImport.Click
         Using dlgOpen As New OpenFileDialog()
+            ' Set filter and title for the file dialog.
             dlgOpen.Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*"
             dlgOpen.Title = "Select People CSV File"
             If dlgOpen.ShowDialog() = DialogResult.OK Then
@@ -66,70 +71,10 @@ Public Class Form1
                         Next
                     End If
                     sbPreview.AppendLine()
-                    txtbxDisplay.Text = sbPreview.ToString().TrimEnd()
                 Next
+                txtbxDisplay.Text = sbPreview.ToString().TrimEnd()
             End If
         End Using
-    End Sub
-
-    ' ... (rest of your code above remains unchanged)
-
-    ' --- Konami Code Detection and File Generation ---
-
-    ' Track the sequence of key presses for Konami code detection
-    Private konamiSequence As Keys() = {
-    Keys.Up, Keys.Up, Keys.Down, Keys.Down,
-    Keys.Left, Keys.Right, Keys.Left, Keys.Right,
-    Keys.B, Keys.A, Keys.Enter
-}
-    Private konamiIndex As Integer = 0
-
-    ' Number of text files to create when Konami code is entered
-    Private Const KonamiFileCount As Integer = 5
-
-    ' Attach this handler in Form1_Load
-    Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
-        MyBase.OnKeyDown(e)
-        HandleKonamiCode(e.KeyCode)
-    End Sub
-
-    ''' <summary>
-    ''' Handles Konami code key sequence and triggers file creation when matched.
-    ''' </summary>
-    Private Sub HandleKonamiCode(key As Keys)
-        If key = konamiSequence(konamiIndex) Then
-            konamiIndex += 1
-            If konamiIndex = konamiSequence.Length Then
-                konamiIndex = 0
-                CreateKonamiTextFiles(KonamiFileCount)
-            End If
-        Else
-            ' Reset if wrong key
-            If key = konamiSequence(0) Then
-                konamiIndex = 1
-            Else
-                konamiIndex = 0
-            End If
-        End If
-    End Sub
-
-    ''' <summary>
-    ''' Creates the specified number of text files, each filled with random Long values.
-    ''' </summary>
-    Private Sub CreateKonamiTextFiles(fileCount As Integer)
-        Dim folderPath As String = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
-        Dim rnd As New Random()
-        Dim linesPerFile As Integer = 100
-        For i As Integer = 1 To fileCount
-            Dim filePath As String = Path.Combine(folderPath, $"KonamiLongs_{i}.txt")
-            Using sw As New StreamWriter(filePath, False)
-                For j As Integer = 1 To linesPerFile
-                    Dim value As Long = CLng(rnd.Next(Integer.MinValue, Integer.MaxValue)) << 32 Or CLng(rnd.Next(Integer.MinValue, Integer.MaxValue))
-                    sw.WriteLine(value)
-                Next
-            End Using
-        Next
-        MessageBox.Show($"{fileCount} text files with random Long values have been created on your Desktop.", "Konami Code Activated", MessageBoxButtons.OK, MessageBoxIcon.Information)
     End Sub
 
 
@@ -141,6 +86,7 @@ Public Class Form1
             Return
         End If
 
+        ' Assure the group count is valid.
         Dim groupCount As Integer
         If Not Integer.TryParse(numUpDown.Value, groupCount) OrElse groupCount <= 0 Then
             MessageBox.Show("Invalid group amount.", "Sort Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
@@ -188,12 +134,12 @@ Public Class Form1
             MessageBox.Show("No people loaded to export.", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
             Return
         End If
-
+        ' Check if the groups are sorted before exporting.
         If Not isSorted Then
             MessageBox.Show("Please sort the groups before exporting.", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
             Return
         End If
-
+        ' Assure the group count is valid.
         Dim groupCount As Integer
         If Not Integer.TryParse(numUpDown.Value, groupCount) OrElse groupCount <= 0 Then
             MessageBox.Show("Invalid group amount.", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
@@ -218,6 +164,7 @@ Public Class Form1
         Dim maxGroupSize As Integer = dictGroups.Values.Max(Function(g) g.Count)
 
         Using dlgSave As New SaveFileDialog()
+            ' Set filter and title for the save file dialog.
             dlgSave.Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*"
             dlgSave.Title = "Select File Path To Send"
             dlgSave.FileName = "SortedPeople.csv"
@@ -252,7 +199,7 @@ Public Class Form1
         End Using
     End Sub
 
-
+    ' Shows a help message box with instructions for using the application.
     Private Sub btnHelp_Click(sender As Object, e As EventArgs) Handles btnHelp.Click
         MessageBox.Show(
         "Instructions:" & Environment.NewLine &
@@ -262,56 +209,39 @@ Public Class Form1
         "- Click 'Export' to save the sorted groups to a CSV file." & Environment.NewLine &
         Environment.NewLine &
         "Ensure all names and preferences in your CSV are consistent." & Environment.NewLine &
-        "For more assistance, questions or requests please comment under the github page at (link)",
+        "For more assistance, questions or requests please comment under the github page at (https://github.com/HooeyMacgooes/Group-Preferential-Sorter)",
         "Help",
         MessageBoxButtons.OK,
         MessageBoxIcon.Information
     )
     End Sub
 
-    'Does the funny
+    ' Shrinks all controls and the form itself for a "fun" effect when the Fun button is clicked.
     Private Sub btnFun_Click(sender As Object, e As EventArgs) Handles btnFun.Click
-        ' Shrink factor (e.g., 0.8 = shrink to 80% of original size)
         Dim shrinkFactor As Double = 0.01
-
-        ' Recursively shrink all controls on the form
         ShrinkControls(Me.Controls, shrinkFactor)
-
-        ' Shrink the form itself
         Me.Width = CInt(Me.Width * shrinkFactor)
         Me.Height = CInt(Me.Height * shrinkFactor)
     End Sub
 
-    ''' <summary>
-    ''' Recursively shrinks all controls in a control collection.
-    ''' </summary>
+    ' Recursively shrinks all controls in a control collection by a given factor.
     Private Sub ShrinkControls(ctrls As Control.ControlCollection, factor As Double)
         For Each ctrl As Control In ctrls
-            ' Shrink size and location
             ctrl.Width = Math.Max(10, CInt(ctrl.Width * factor))
             ctrl.Height = Math.Max(10, CInt(ctrl.Height * factor))
             ctrl.Left = CInt(ctrl.Left * factor)
             ctrl.Top = CInt(ctrl.Top * factor)
-
-            ' Shrink font size if possible
             If ctrl.Font IsNot Nothing Then
                 Dim newSize As Single = Math.Max(6, ctrl.Font.Size * CSng(factor))
                 ctrl.Font = New Font(ctrl.Font.FontFamily, newSize, ctrl.Font.Style)
             End If
-
-            ' Recursively shrink child controls (for containers)
             If ctrl.HasChildren Then
                 ShrinkControls(ctrl.Controls, factor)
             End If
         Next
     End Sub
 
-    ' Add these fields to Form1 (at the top, after your other fields)
-    Private originalFormSize As Size
-    Private originalControlBounds As New Dictionary(Of Control, Rectangle)
-    Private originalFontSizes As New Dictionary(Of Control, Single)
-
-    ' Store the original size and position of all controls and the form
+    ' Stores the original size, position, and font size of all controls for scaling.
     Private Sub StoreOriginalControlBounds(ctrls As Control.ControlCollection)
         For Each ctrl As Control In ctrls
             originalControlBounds(ctrl) = ctrl.Bounds
@@ -322,7 +252,7 @@ Public Class Form1
         Next
     End Sub
 
-    ' Scale all controls and fonts based on the new form size
+    ' Scales all controls and fonts based on the new form size.
     Private Sub ScaleControls(ctrls As Control.ControlCollection, scaleX As Double, scaleY As Double)
         For Each ctrl As Control In ctrls
             If originalControlBounds.ContainsKey(ctrl) Then
@@ -342,8 +272,7 @@ Public Class Form1
         Next
     End Sub
 
-
-    ' Handle the Resize event to scale controls
+    ' Handles the Resize event to scale controls and fonts proportionally.
     Protected Overrides Sub OnResize(e As EventArgs)
         MyBase.OnResize(e)
         If originalFormSize.Width = 0 OrElse originalFormSize.Height = 0 Then Return
@@ -404,7 +333,7 @@ Public Class GroupPreferentialSorter
     ' Returns: List of Person objects populated from the file.
     Public Function LoadPeopleFromCsv(strFilePath As String) As List(Of Person)
         Dim lstPeople As New List(Of Person)()
-
+        ' Check if the file exists before reading.
         For Each strLine As String In File.ReadLines(strFilePath)
             If String.IsNullOrWhiteSpace(strLine) Then Continue For
             Dim arrFields = strLine.Split(","c)
